@@ -8,19 +8,21 @@
 
 //创建
 int
-DSTRING_create(PDString * dstring_pp, const char *str)
+DSTRING_create(PDString *dstring_pp, const char *str)
 {
 	if(NULL == dstring_pp) {
+#ifdef __DEBUG
 		printf("实参为空指针 \n");
-
-		return 0;
+#endif
+		return -1;
 	}
 
 	PDString p = (PDString)calloc(1, sizeof(DString));
 	if(NULL == p) {
+#ifdef __DEBUG
 		perror("calloc failed");
-
-		return 0;
+#endif
+		return -1;
 	}
 
 	if(NULL == str) {
@@ -66,11 +68,8 @@ DSTRING_free(PDString dstring_p)
 		dstring_p->buff = NULL;
 	}
 
-	if(NULL != dstring_p) {
-		free(dstring_p);
-
-		dstring_p = NULL;
-	}
+	free(dstring_p);
+	dstring_p = NULL;
 }
 
 //获取字节数
@@ -143,7 +142,7 @@ resize(PDString dstring_p, int len)
 
 	int newLen = dstring_p->len + len;
 	if(newLen > (1024 * 1024)) {
-		newLen += 1024 *1024;
+		newLen += 1024 * 1024;
 	} else {
 		newLen *= 2;
 	}
@@ -183,7 +182,12 @@ DSTRING_cat_cstring(PDString dstring_p, const char *str)
 	int len = strlen(str);
 
 	if(need_resize(dstring_p->free, len)) {
-		resize(dstring_p, len);
+		if(-1 == resize(dstring_p, len)) {
+#ifdef __DEBUG
+			printf("%s(%d): 扩容失败 \n", __FILE__, __LINE__);
+#endif			
+			return -1;
+		}
 	}
 
 	//+1表示拷贝\0
